@@ -13,6 +13,6 @@ hostname = socket.gethostname()
 if hostname == 'Avelinos-MBP':
     ROOT_DIR = os.path.join(os.environ['HOME'], 'OneDrive - Imperial College London/training_data/food/')
 else:
-    ROOT_DIR = '/well/rittscher/users/avelino/WormData/experiments/food/train_set/train_set'
+    ROOT_DIR = '/well/rittscher/users/avelino/WormData/experiments/food/'
 
 DATA_DIR = os.path.join(ROOT_DIR, 'train_set')

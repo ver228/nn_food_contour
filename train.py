@@ -58,6 +58,7 @@ class TorchBatchifier():
 
 
 if __name__ == '__main__':
+    cuda_id = -1
     n_epochs = 3
     batch_size = 2
     
@@ -67,9 +68,14 @@ if __name__ == '__main__':
                                add_cnt_weights = False
                                )
     
-    gen = TorchBatchifier(gen_imgs, batch_size)
+    gen = TorchBatchifier(gen_imgs, 
+                          batch_size,
+                          cuda_id = cuda_id)
     
     model = UNet()
+    if cuda_id > 0:
+        model = model.cuda(cuda_id)
+    
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     
