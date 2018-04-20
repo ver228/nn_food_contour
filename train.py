@@ -58,10 +58,11 @@ class TorchBatchifier():
 
 
 if __name__ == '__main__':
+    cuda_id = -1
     if torch.cuda.is_available():
-       print("THIS IS CUDA!!!!")
-    
-    cuda_id = 0
+        print("THIS IS CUDA!!!!")
+        cuda_id = 0
+        
     n_epochs = 3
     batch_size = 2
     
@@ -86,11 +87,7 @@ if __name__ == '__main__':
     for epoch in range(n_epochs):
         pbar = tqdm.tqdm(gen)
         for X, target in gen:
-            import pdb
-            pdb.set_trace()
-            print(X)
             pred = model(X)
-            
             target_cropped = _crop(pred, target)
             
             loss = criterion(pred, target_cropped)

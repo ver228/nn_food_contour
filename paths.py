@@ -10,7 +10,7 @@ import os
 import socket
 
 hostname = socket.gethostname()
-if hostname == 'Avelinos-MBP':
+if hostname == 'Avelinos-MacBook-Pro.local':
     ROOT_DIR = os.path.join(os.environ['HOME'], 'OneDrive - Imperial College London/training_data/food/')
 else:
     ROOT_DIR = '/well/rittscher/users/avelino/WormData/experiments/food/'

@@ -44,9 +44,10 @@ class UNet(nn.Module):
                 self._conv2d_block_bn(ini_filter, ini_filter, 3)
                 )
         self._down_layers.append(L)
+        self.add_module('down_0', L)
         
         prev_filt = ini_filter
-        for _ in range(4):
+        for ii in range(4):
             next_filt = prev_filt*2
             L = nn.Sequential(
                 self._conv2d_block_bn(prev_filt, next_filt, 3, stride=2),
@@ -54,12 +55,13 @@ class UNet(nn.Module):
                 )
             prev_filt = next_filt
             
+            self.add_module('down_{}'.format(ii + 1), L)
             self._down_layers.append(L)
         
         self._up_layers = []
         
         prev_filt = next_filt
-        for _ in range(4):
+        for ii in range(4):
             next_filt = prev_filt//2
             L1 = nn.Sequential(
                 nn.ConvTranspose2d(prev_filt, next_filt, 3, stride=2),
@@ -72,6 +74,10 @@ class UNet(nn.Module):
                 )
             
             prev_filt = next_filt
+            
+            self.add_module('up_a{}'.format(ii + 1), L1)
+            self.add_module('up_b{}'.format(ii + 1), L1)
+            
             self._up_layers.append((L1, L2))
         
         
