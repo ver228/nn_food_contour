@@ -58,7 +58,10 @@ class TorchBatchifier():
 
 
 if __name__ == '__main__':
-    cuda_id = -1
+    if torch.cuda.is_available():
+       print("THIS IS CUDA!!!!")
+    
+    cuda_id = 0
     n_epochs = 3
     batch_size = 2
     
@@ -73,16 +76,21 @@ if __name__ == '__main__':
                           cuda_id = cuda_id)
     
     model = UNet()
-    if cuda_id > 0:
-        model = model.cuda(cuda_id)
-    
     criterion = nn.BCELoss()
+    if cuda_id >= 0:
+       model = model.cuda(cuda_id)
+       criterion = criterion.cuda(cuda_id)
+
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     
     for epoch in range(n_epochs):
         pbar = tqdm.tqdm(gen)
         for X, target in gen:
+            import pdb
+            pdb.set_trace()
+            print(X)
             pred = model(X)
+            
             target_cropped = _crop(pred, target)
             
             loss = criterion(pred, target_cropped)
