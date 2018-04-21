@@ -15,47 +15,34 @@ from torch import nn
 from flow import ImgFlowSplitted
 from unet import UNet, _crop
 
+from torch.utils.data import Dataset, DataLoader
 
-class TorchBatchifier():
-    def __init__(self, 
-                 generator, 
-                 batch_size,
-                 cuda_id = -1):
-        
-        self.generator = generator
-        self.batch_size = batch_size
+class AugmentedDataset(ImgFlowSplitted, Dataset):
+    def __init__(self, cuda_id = -1, **argkws):
+        ImgFlowSplitted.__init__(self, **argkws)
         self.cuda_id = cuda_id
         
-    def __iter__(self):
-        batch = []
-        for dat in self.generator:
-            batch.append(dat)
-            
-            if len(batch) >= self.batch_size:
-                yield self._prepare_batch(batch)
-                batch = []
+    def __getitem__(self, index):
+        dat = ImgFlowSplitted.__getitem__(self, index)
+        dat = tuple(self._prepare_for_torch(x) for x in dat)
+        return dat
         
-        if batch:
-            yield self._prepare_batch(batch)
-         
-    def _prepare_ind(self, X):
-        X = np.concatenate([torch.from_numpy(x[None, None, ...]) for x in X])
-        X = torch.from_numpy(X)
+    
+    def _prepare_for_torch(self, X):
+        X = torch.from_numpy(X[None, ...])
         
         if self.cuda_id >= 0:
             X = X.cuda(self.cuda_id)
         
-        X = torch.autograd.Variable(X)
+        #X = torch.autograd.Variable(X)
         return X
     
-    def _prepare_batch(self, batch):
-        return [self._prepare_ind(x) for x in zip(*batch)]
-        
-        
-
+    
     def __len__(self):
-        return math.ceil(len(self.generator)/self.batch_size)
+        return ImgFlowSplitted.__len__(self)
+    
 
+#%%
 
 if __name__ == '__main__':
     cuda_id = -1
@@ -64,17 +51,17 @@ if __name__ == '__main__':
         cuda_id = 0
         
     n_epochs = 3
-    batch_size = 2
+    batch_size = 16
+    num_workers = 8
     
-    gen_imgs = ImgFlowSplitted(test_split = 0.1,
+    gen_imgs = AugmentedDataset(test_split = 0.1,
                                pad_size = 32,
-                               is_shuffle = False,
                                add_cnt_weights = False
                                )
     
-    gen = TorchBatchifier(gen_imgs, 
-                          batch_size,
-                          cuda_id = cuda_id)
+    gen = DataLoader(gen_imgs, 
+                     batch_size = batch_size,
+                     num_workers = num_workers)
     
     model = UNet()
     criterion = nn.BCELoss()
@@ -82,11 +69,14 @@ if __name__ == '__main__':
        model = model.cuda(cuda_id)
        criterion = criterion.cuda(cuda_id)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     
     for epoch in range(n_epochs):
         pbar = tqdm.tqdm(gen)
-        for X, target in gen:
+        for X, target in pbar:
+            X = torch.autograd.Variable(X)
+            target = torch.autograd.Variable(target)
+            
             pred = model(X)
             target_cropped = _crop(pred, target)
             

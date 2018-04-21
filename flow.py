@@ -195,6 +195,11 @@ class ImgFlowSplitted(ImgFlow):
                  test_split = 0.2,
                  **argkws):
         super().__init__(**argkws)
+        self.seed = seed
+        self.test_split = test_split
+        
+        random.seed(seed)
+        
         
         bn = [os.path.basename(x)[2:] for x, _ in self.fname_pairs]
         
@@ -227,25 +232,27 @@ class ImgFlowSplitted(ImgFlow):
         self._is_transform = True
         self._is_train = True
         
+        self.sample_inds = []
+        dates = list(self.train_data.keys())
+        for _ in range(len(self)):
+            date_str = random.choice(dates)
+            inds = self.train_data[date_str]
+            ii = random.choice(inds)
+            self.sample_inds.append(ii)
     
     def test(self):
         self._is_transform = False
         self._is_train = False
+        self.sample_inds = sum(self.test_data.values(), [])
         
     def __iter__(self):
-        if self._is_train:
-            
-            dates = list(self.train_data.keys())
-            for _ in range(len(self)):
-                date_str = random.choice(dates)
-                inds = self.train_data[date_str]
-                ii = random.choice(inds)
-                yield self[ii]
-        
-        else:
-            for k, inds in self.test_data.items():
-                for ii in inds:
-                    yield self[ii]
+        for ii in range(len(self)):
+            yield self[ii]
+    
+    
+    def __getitem__(self, index):
+        ii = self.sample_inds[index]
+        return super().__getitem__(ii)
     
     def __len__(self):
         dat = self.train_data if self._is_train else self.test_data
@@ -260,7 +267,6 @@ if __name__ == '__main__':
     gen = ImgFlowSplitted(
                 test_split = 0.1,
                 pad_size = 32,
-                is_shuffle = False,
                  add_cnt_weights = True
                  )
     
@@ -269,7 +275,7 @@ if __name__ == '__main__':
     
         plt.figure(figsize = (8, 3))
         plt.subplot(1,3,1)
-        plt.imshow(X)
+        plt.imshow(X) 
         plt.subplot(1,3,2)
         plt.imshow(Y)
         plt.subplot(1,3,3)
@@ -281,8 +287,6 @@ if __name__ == '__main__':
     gen.test()
     
     for ii, (X, Y, Yc) in enumerate(gen):
-    
-    
         plt.figure(figsize = (8, 3))
         plt.subplot(1,3,1)
         plt.imshow(X)

@@ -76,7 +76,7 @@ class UNet(nn.Module):
             prev_filt = next_filt
             
             self.add_module('up_a{}'.format(ii + 1), L1)
-            self.add_module('up_b{}'.format(ii + 1), L1)
+            self.add_module('up_b{}'.format(ii + 1), L2)
             
             self._up_layers.append((L1, L2))
         
