@@ -82,7 +82,7 @@ class UNet(nn.Module):
         
         
         self.score = nn.Sequential(
-                nn.Conv2d(next_filt, 1, 1),
+                nn.Conv2d(next_filt, 2, 1),
                 nn.Sigmoid()
                 )
         

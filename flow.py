@@ -112,20 +112,27 @@ class ImgFlow(BasicImgFlow):
         
         
         X = self._img_norm(Xo)
+        X = X[None, ...]
         
         Ym = Yo>0
-        Y = self._y_to_weight(Ym)
+        W = self._y_to_weight(Ym)
+        
+        Ys = np.stack((Ym, ~Ym), axis=0)
+        
+        Y = Ys*W[ None, ...]
         
         outputs = [X,Y]
         if self.add_cnt_weights:
             Y_cnt = self._get_contour(Ym)
-            Y_cnt = self._y_to_weight(Y_cnt)
+            W_cnt = self._y_to_weight(Y_cnt)
             
-            outputs.append(Y_cnt)
-    
+            Ys = np.stack((Y_cnt, 1-Y_cnt), axis=0)
+            Y_cnt_w = Ys*W_cnt[None, ...]
+            
+            outputs.append(Y_cnt_w)
+        
         if self._is_transform:
             outputs = self._transform(outputs)
-        
         
         return outputs
         
@@ -177,6 +184,9 @@ class ImgFlow(BasicImgFlow):
         
         if len(self.transform_params) > 0:
             expected_size = imgs[0].shape #the expected output size after padding
+            if len(expected_size) >2:
+                expected_size = expected_size[-2:]
+            
             transforms = get_random_transform(*expected_size, **self.transform_params)
             
             imgs_t = [transform_img(x, *transforms) for x in imgs]
@@ -260,7 +270,7 @@ class ImgFlowSplitted(ImgFlow):
 
 
 
-
+#%%
 if __name__ == '__main__':
     import matplotlib.pylab as plt
     
@@ -271,15 +281,13 @@ if __name__ == '__main__':
                  )
     
     for ii, (X, Y, Yc) in enumerate(gen):
-    
-    
         plt.figure(figsize = (8, 3))
         plt.subplot(1,3,1)
-        plt.imshow(X) 
+        plt.imshow(np.squeeze(X)) 
         plt.subplot(1,3,2)
-        plt.imshow(Y)
+        plt.imshow(Y[0, ...])
         plt.subplot(1,3,3)
-        plt.imshow(Yc)
+        plt.imshow(Y[1, ...])
         
         if ii > 1:
             break
@@ -289,11 +297,11 @@ if __name__ == '__main__':
     for ii, (X, Y, Yc) in enumerate(gen):
         plt.figure(figsize = (8, 3))
         plt.subplot(1,3,1)
-        plt.imshow(X)
+        plt.imshow(np.squeeze(X)) 
         plt.subplot(1,3,2)
-        plt.imshow(Y)
+        plt.imshow(Yc[0, ...])
         plt.subplot(1,3,3)
-        plt.imshow(Yc)
+        plt.imshow(Yc[1, ...])
         
         if ii > 1:
             break

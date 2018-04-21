@@ -21,7 +21,7 @@ class AugmentedDataset(ImgFlowSplitted, Dataset):
         
     def __getitem__(self, index):
         dat = ImgFlowSplitted.__getitem__(self, index)
-        dat = tuple(torch.from_numpy(x[None, ...]) for x in dat)
+        dat = tuple(torch.from_numpy(x) for x in dat)
         return dat
     
     def __len__(self):
@@ -33,6 +33,11 @@ def _prepare_for_torch(X, cuda_id):
         X = X.cuda(cuda_id)
     X = torch.autograd.Variable(X)
     return X
+
+def unet_loss(target, pred):
+    eps = 1e-6
+    loss = (target*(pred + eps).log()).mean()
+    return loss
 
 
 if __name__ == '__main__':
@@ -55,19 +60,17 @@ if __name__ == '__main__':
                      num_workers = num_workers)
     
     model = UNet()
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss()
     if cuda_id >= 0:
        model = model.cuda(cuda_id)
-       criterion = criterion.cuda(cuda_id)
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+       
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     
     for epoch in range(n_epochs):
         pbar = tqdm.tqdm(gen)
         for X, target in pbar:
             X = _prepare_for_torch(X, cuda_id)
             target =  _prepare_for_torch(target, cuda_id)
-            
             pred = model(X)
             target_cropped = _crop(pred, target)
             

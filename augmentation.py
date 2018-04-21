@@ -143,16 +143,15 @@ def _transform_img(img,
     
     return img_aug
 
-def transform_img(D, *argwks):
+def transform_img(D, *args):
     if D is None:
         return None
     
     if D.ndim == 3:
-        D_aug = np.zeros_like(D)
-        for nn in range(D.shape[-1]):
-            D_aug[:, :, nn] = _transform_img(D[: ,:, nn], **argwks)
+        D_aug = [_transform_img(x, *args) for x in D]
+        D_aug = np.array(D_aug)
         return D_aug
     elif D.ndim == 2:
-        return _transform_img(D, *argwks)
+        return _transform_img(D, *args)
     else:
         raise ValueError()
