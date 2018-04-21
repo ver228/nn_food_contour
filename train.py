@@ -35,10 +35,23 @@ def _prepare_for_torch(X, cuda_id):
     return X
 
 def unet_loss(target, pred):
-    eps = 1e-6
-    loss = (target*(pred + eps).log()).mean()
+    loss = -(target*(pred + 1.e-3).log()).mean()
     return loss
 
+class UnetLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, embedding_output, target_classes):
+        classification, video_embedding, snps_embedding = embedding_output
+        classification_loss = self.classification_loss(classification,
+                                                       target_classes)
+        
+        # Can't use the Loss layer here because it doesn't like - aej, likely due to autograd gradients
+        _embedding_loss = self.embedding_loss(snps_embedding, video_embedding)
+        
+        loss = classification_loss + self.embedding_loss_mixture * _embedding_loss
+        return loss
 
 if __name__ == '__main__':
     cuda_id = -1
@@ -47,7 +60,7 @@ if __name__ == '__main__':
         cuda_id = 0
         
     n_epochs = 3
-    batch_size = 4
+    batch_size = 1
     num_workers = 2
     
     gen_imgs = AugmentedDataset(test_split = 0.1,
@@ -60,7 +73,8 @@ if __name__ == '__main__':
                      num_workers = num_workers)
     
     model = UNet()
-    criterion = nn.BCEWithLogitsLoss()
+    #criterion = nn.BCEWithLogitsLoss()
+    criterion = unet_loss
     if cuda_id >= 0:
        model = model.cuda(cuda_id)
        
@@ -75,6 +89,10 @@ if __name__ == '__main__':
             target_cropped = _crop(pred, target)
             
             loss = criterion(pred, target_cropped)
+            if loss.data[0] < 0:
+                import pdb
+                pdb.set_trace()
+            
             optimizer.zero_grad()               # clear gradients for this training step
             loss.backward()                     # backpropagation, compute gradients
             optimizer.step() 
