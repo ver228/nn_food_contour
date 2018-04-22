@@ -34,9 +34,9 @@ def _prepare_for_torch(X, cuda_id):
     X = torch.autograd.Variable(X)
     return X
 
-def unet_loss(target, pred):
-    loss = -(target*(pred + 1.e-3).log()).mean()
-    return loss
+def unet_loss(_target, _pred):
+    _loss = -(_target*(_pred + 1.e-3).log()).mean()
+    return _loss
 
 class UnetLoss(nn.Module):
     def __init__(self):
@@ -75,6 +75,8 @@ if __name__ == '__main__':
     model = UNet()
     #criterion = nn.BCEWithLogitsLoss()
     criterion = unet_loss
+    #criterion = nn.NLLLoss()
+    
     if cuda_id >= 0:
        model = model.cuda(cuda_id)
        
@@ -85,6 +87,7 @@ if __name__ == '__main__':
         for X, target in pbar:
             X = _prepare_for_torch(X, cuda_id)
             target =  _prepare_for_torch(target, cuda_id)
+            
             pred = model(X)
             target_cropped = _crop(pred, target)
             
@@ -92,7 +95,7 @@ if __name__ == '__main__':
             if loss.data[0] < 0:
                 import pdb
                 pdb.set_trace()
-            
+                
             optimizer.zero_grad()               # clear gradients for this training step
             loss.backward()                     # backpropagation, compute gradients
             optimizer.step() 
