@@ -240,11 +240,12 @@ class ImgFlowSplitted(ImgFlow):
         
     def train(self):
         self._is_transform = True
-        self._is_train = True
         
         self.sample_inds = []
         dates = list(self.train_data.keys())
-        for _ in range(len(self)):
+
+        N = sum(len(x) for x in self.train_data.values())
+        for _ in range(N):
             date_str = random.choice(dates)
             inds = self.train_data[date_str]
             ii = random.choice(inds)
@@ -252,21 +253,22 @@ class ImgFlowSplitted(ImgFlow):
     
     def test(self):
         self._is_transform = False
-        self._is_train = False
         self.sample_inds = sum(self.test_data.values(), [])
+    
+    def tiny(self):
+        self._is_transform = False
+        self.sample_inds = list(range(10))
         
     def __iter__(self):
         for ii in range(len(self)):
             yield self[ii]
-    
     
     def __getitem__(self, index):
         ii = self.sample_inds[index]
         return super().__getitem__(ii)
     
     def __len__(self):
-        dat = self.train_data if self._is_train else self.test_data
-        return sum(len(x) for x in dat.values())
+        return len(self.sample_inds)
 
 
 

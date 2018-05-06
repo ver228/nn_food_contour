@@ -16,3 +16,4 @@ else:
     ROOT_DIR = '/well/rittscher/users/avelino/WormData/experiments/food/'
 
 DATA_DIR = os.path.join(ROOT_DIR, 'train_set')
+RESULTS_DIR = os.path.join(ROOT_DIR, 'results', 'pytorch')
