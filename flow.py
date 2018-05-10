@@ -258,6 +258,7 @@ class ImgFlowSplitted(ImgFlow):
     def tiny(self):
         self._is_transform = False
         self.sample_inds = list(range(10))
+        random.shuffle(self.sample_inds)
         
     def __iter__(self):
         for ii in range(len(self)):
@@ -269,6 +270,7 @@ class ImgFlowSplitted(ImgFlow):
     
     def __len__(self):
         return len(self.sample_inds)
+
 
 
 

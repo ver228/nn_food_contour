@@ -68,7 +68,7 @@ class Up(nn.Module):
     def __init__(self, n_in, n_out, is_bilinear = True):
         super().__init__()
         if is_bilinear:
-            self.up = nn.Upsample(scale_factor=2, mode='bilinear')
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         else:
             self.up = nn.ConvTranspose2d(n_in, n_out, 2, stride=2)
 
@@ -224,8 +224,13 @@ if __name__ == '__main__':
     
     mod = UNet()
     
+    if torch.cuda.is_available():
+        mod = mod.cuda()    
+        Xt = Xt.cuda()
+    
+    
     out = mod(Xt)
     
-    out.size()
-    
+    print(out.size())
+     
     
