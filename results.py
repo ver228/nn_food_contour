@@ -35,8 +35,9 @@ if __name__ == '__main__':
     #saved_model_path = 'logs/food_unet_20180501_192131/model_best.pth.tar'
     #gen_imgs.test()
     
-    #saved_model_path = 'tiny_log/food_unet_20180501_185130/model_best.pth.tar'
-    saved_model_path = 'tiny_log/food_unet_20180509_175519/model_best.pth.tar'
+    #saved_model_path = 'tiny_log/unet_tiny_lr0.01_batch1/model_best.pth.tar'
+    #saved_model_path = 'tiny_log/unet_tiny_lr0.01_batch4/model_best.pth.tar'
+    saved_model_path = 'tiny_log/20180511_121507_unet_dilated_tiny_lr0.0001_batch1/model_best.pth.tar'
     gen_imgs.tiny()
     
     saved_model_path = os.path.join(RESULTS_DIR, saved_model_path)
@@ -51,9 +52,6 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
 
-    
-    
-    
     #%%
     model.to(device)
     model.eval()
