@@ -19,12 +19,12 @@ border_weight_params_dlf = dict(sigma=2.5, weigth=10)
 transform_params_dfl = dict(
             rotation_range=90, 
              shift_range = 0.1,
-             zoom_range = (0.9, 1.5),
+             zoom_range = (0.90, 1.15),
              horizontal_flip=True,
              vertical_flip=True,
              elastic_alpha_range = 800,
              elastic_sigma = 10,
-             int_alpha = (0.5,2.25)
+             int_alpha = (0.8, 1.25)
              )
 
 class BasicImgFlow(object):

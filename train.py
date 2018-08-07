@@ -46,13 +46,14 @@ def save_checkpoint(state, is_best, save_dir, filename='checkpoint.pth.tar'):
         best_path = os.path.join(save_dir, 'model_best.pth.tar')
         shutil.copyfile(checkpoint_path, best_path)
 
-def main(is_tiny = True, 
+def main(is_tiny = False, 
          cuda_id = 0,
          n_epochs = 1000,
         batch_size = 1,
         num_workers = 1,
         lr=1e-4,
-        model_name = 'unet'
+        model_name = 'unet',
+        save_root_dir = RESULTS_DIR
         ):
     
     image2save = 4
@@ -85,11 +86,15 @@ def main(is_tiny = True,
                      batch_size = batch_size,
                      num_workers = num_workers)
     
-    log_dir_root =  os.path.join(RESULTS_DIR, 'logs')
+    log_dir_root =  os.path.join(save_root_dir, 'logs')
     if is_tiny:
         print("It's me, tiny-log!!!")
-        log_dir_root =  os.path.join(RESULTS_DIR, 'tiny_log')
+        log_dir_root =  os.path.join(save_root_dir, 'tiny_log')
     
+    train_img_freq = 1000 if is_tiny else len(gen)  
+    test_img_freq = 10 if is_tiny else 1 
+
+
     now = datetime.datetime.now()
     bn = now.strftime('%Y%m%d_%H%M%S') + '_' + model_name
     if is_tiny:
@@ -121,10 +126,11 @@ def main(is_tiny = True,
             gen_imgs._is_transform = True
         
         pbar_train = tqdm.tqdm(gen)
-        for X, target in pbar_train:
-            X = X.to(device)
-            target =  target.to(device)
-            
+        for x_in, y_in in pbar_train:
+            X = x_in.to(device)
+            target =  y_in.to(device)
+            del x_in, y_in
+
             pred = model(X)
             target_cropped = _crop(pred, target)
             loss = criterion(pred, target_cropped)
@@ -133,7 +139,7 @@ def main(is_tiny = True,
             loss.backward()                     # backpropagation, compute gradients
             optimizer.step() 
         
-            if n_iter % 500 <= batchs2save:
+            if n_iter % train_img_freq <= batchs2save:
                 if len(image_train) < batchs2save:
                     dd = X.cpu(), target[:, 0].cpu()[:, None, :, :], pred[:, 0].cpu()[:, None, :, :]
                     image_train.append(dd)
@@ -152,7 +158,9 @@ def main(is_tiny = True,
             n_iter+= 1
             
             train_avg_loss += loss.item()
-        
+        	
+            del loss, pred, target_cropped, X, target
+
         train_avg_loss /= len(gen)
         logger.add_scalar('train_epoch_loss', train_avg_loss, epoch)
         #%%
@@ -166,9 +174,11 @@ def main(is_tiny = True,
             
             image_test = []
             pbar_test = tqdm.tqdm(gen)
-            for X, target in pbar_test:
-                X = X.to(device)
-                target =  target.to(device)
+            for x_in, y_in in pbar_test:
+                X = x_in.to(device)
+                target =  y_in.to(device)
+                del x_in, y_in
+
                 pred = model(X)
                 
                 target_cropped = _crop(pred, target)
@@ -186,10 +196,13 @@ def main(is_tiny = True,
                 n_iter+= 1
                 
                 test_avg_loss += loss.item()
+
+                del loss, pred, target_cropped, X, target
         
-        xs = torch.cat([torch.cat(x) for x in image_test])
-        xs = vutils.make_grid(xs, nrow = 3, normalize=True, scale_each = True)
-        logger.add_image('test_epoch', xs, n_iter)
+        if epoch % test_img_freq == 0:
+            xs = torch.cat([torch.cat(x) for x in image_test])
+            xs = vutils.make_grid(xs, nrow = 3, normalize=True, scale_each = True)
+            logger.add_image('test_epoch', xs, epoch)
         
         test_avg_loss /= len(gen)
         logger.add_scalar('test_epoch_loss', test_avg_loss, epoch)
