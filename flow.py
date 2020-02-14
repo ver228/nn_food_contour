@@ -34,13 +34,13 @@ class BasicImgFlow(object):
                  is_shuffle = False
                  ):
         
-        fnames = os.listdir(main_dir)
+        fnames = os.listdir(str(main_dir))
         
         #the the name of the correponding y file
         fname_pairs = [(x, 'Y' + x[1:]) for x in fnames if x.endswith('.png') and x.startswith('X')]
         
         #check all files are in fnames
-        unpaired_files = (set(sum(fname_pairs, ())) - set(fnames))
+        unpaired_files = (set([y for x in fname_pairs for y in x]) - set(fnames))
         if  len(unpaired_files) > 0: #check all the sets
             raise ValueError('Some X_ files do not have a matching Y_ file.')
         
